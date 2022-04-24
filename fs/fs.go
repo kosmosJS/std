@@ -17,7 +17,7 @@ func readFileLines(p string) ([]string, error) {
 	f, e := os.Open(p)
 
 	if e != nil {
-		return runtime.ToValue([]string{}), e
+		return []string{}, e
 	}
 
 	var l []string
