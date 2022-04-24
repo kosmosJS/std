@@ -1,4 +1,4 @@
-package main
+package std
 
 import (
 	kFS "github.com/kosmosJS/std/fs"
