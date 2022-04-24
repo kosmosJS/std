@@ -3,7 +3,7 @@ package fs
 import (
 	"github.com/kosmosJS/engine-node/require"
 	"github.com/kosmosJS/engine"
-	"os"
+	//"os"
 )
 
 func RegisterFS() {
