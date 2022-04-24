@@ -11,7 +11,9 @@
 usage:
 
 ```js
-copyFile("example.txt", "newexample.txt")
+const fs = require("fs")
+
+fs.copyFile("example.txt", "newexample.txt")
 ```
 
 ## readFile
@@ -19,7 +21,9 @@ copyFile("example.txt", "newexample.txt")
 usage:
 
 ```js
-const data = readFile("example.txt")
+const fs = require("fs")
+
+const data = fs.readFile("example.txt")
 
 // data => ["line 1", "line 2", "line 3...
 ```
@@ -29,7 +33,9 @@ const data = readFile("example.txt")
 usage:
 
 ```js
-writeFile("example.txt", [
+const fs = require("fs")
+
+fs.writeFile("example.txt", [
 	"line 1",
 	"line 2",
 	"line 3",
@@ -41,7 +47,9 @@ writeFile("example.txt", [
 usage:
 
 ```js
-appendFile("example.txt", [
+const fs = require("fs")
+
+fs.appendFile("example.txt", [
 	"line 1",
 	"line 2",
 	"line 3",
@@ -53,7 +61,9 @@ appendFile("example.txt", [
 usage:
 
 ```js
-if (exists("example.txt")) {
+const fs = require("fs")
+
+if (fs.exists("example.txt")) {
 	console.log("file or directory exists")
 } else {
 	console.log("file or directory exists")
