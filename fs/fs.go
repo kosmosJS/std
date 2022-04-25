@@ -3,6 +3,9 @@ package fs
 import (
 	"github.com/kosmosJS/engine-node/require"
 	"github.com/kosmosJS/engine"
+	cp "github.com/otiai10/copy"
+	"strings"
+	"errors"
 	"bufio"
 	"fmt"
 	"os"
@@ -51,20 +54,20 @@ func readFile(p string) ([]string, error) {
 	return l, s.Err()
 }
 
-func copyFile(src string, dst string) error {
-	d, e := readFile(src)
-	if e != nil {
-		return d, e
-	}
-	e = writeFile(dst, d)
-	return e
+func isDir(p string) bool, error {
+	i, e := os.Stat(p)
+	return i.IsDir(), error
 }
 
 func Register() {
 	require.RegisterNativeModule("fs", func(runtime *engine.Runtime, module *engine.Object) {
 		o := module.Get("exports").(*engine.Object)
 
-		o.Set("appendFile", func(p string, l []string) error {
+		o.Set("append", func(p string, l []string) error {
+			if isDir(p) {
+				return errors.New("'append' cannot be run on a directory.")
+			}
+
 			f, e := os.Open(p)
 
 			if e != nil {
@@ -82,21 +85,62 @@ func Register() {
 			return w.Flush()
 		})
 
-		o.Set("writeFile", func(p string, l []string) error {
+		o.Set("write", func(p string, l []string) error {
+			if isDir(p) {
+				return errors.New("'write' cannot be run on a directory.")
+			}
+
 			e := writeFile(p, l)
 			return e
 		})
 
-		o.Set("readFile", func(p string) (engine.Value, error) {
+		o.Set("read", func(p string) (engine.Value, error) {
+			if isDir(p) {
+				return errors.New("'read' cannot be run on a directory.")
+			}
+
 			d, e := readFile(p)
 			return runtime.ToValue(d), e
 		})
 
-		o.Set("copyFile", func(src string, dst string), error {
-			return copyFile(src, dst)
+		o.Set("rename", func(src string, dst string), error {
+			return os.Rename(src, dst)
 		})
 
-		o.Set("exists", func(p string) (engine.Value) {
+		o.Set("copy", func(src string, dst string), error {
+			return cp.Copy(src, dst)
+		})
+
+		o.Set("remove", func(p string), error {
+			if isDir(p) {
+				return os.RemoveAll(p)
+			}
+
+			return os.Remove(p)
+		})
+
+		o.Set("isDir", func(p string), (engine.Value, error) {
+			d, e := isDir(p)
+			return runtime.ToValue(d), e
+		})
+
+		o.Set("mkdir", func(p string), error {
+			return os.MkdirAll(p)
+		})
+
+		o.Set("chdir", func(p string), error {
+			return os.Chdir(p)
+		})
+
+		o.Set("chmod", func(p string, m os.FileMode), error {
+			return os.Chmod(p, m)
+		})
+
+		o.Set("chown", func(p string, u, g int), error {
+			return os.Chown(p, u, g)
+		})
+
+		o.Set("exists", func(p string) engine.Value {
 			return runtime.ToValue(exists(p))
 		})
 	})

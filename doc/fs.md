@@ -1,4 +1,4 @@
-# the 'fs' module
+# the `fs` module
 
 - [copyFile](#copyFile)
 - [readFile](#readFile)
@@ -8,8 +8,6 @@
 
 ## copyFile
 
-usage:
-
 ```js
 const fs = require("fs")
 
@@ -17,8 +15,6 @@ fs.copyFile("example.txt", "newexample.txt")
 ```
 
 ## readFile
-
-usage:
 
 ```js
 const fs = require("fs")
@@ -29,8 +25,6 @@ const data = fs.readFile("example.txt")
 ```
 
 ## writeFile
-
-usage:
 
 ```js
 const fs = require("fs")
@@ -44,8 +38,6 @@ fs.writeFile("example.txt", [
 
 ## appendFile
 
-usage:
-
 ```js
 const fs = require("fs")
 
@@ -57,8 +49,6 @@ fs.appendFile("example.txt", [
 ```
 
 ## exists
-
-usage:
 
 ```js
 const fs = require("fs")
