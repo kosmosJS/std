@@ -6,10 +6,11 @@ import (
 	"github.com/kosmosJS/engine"
 	"github.com/pbnjay/memory"
 	rt "runtime"
+	"unsafe"
 	"os"
 )
 
-func isPosix() {
+func isPosix() bool {
 	if rt.GOOS != "windows" {
 		return true
 	}
@@ -18,12 +19,16 @@ func isPosix() {
 }
 
 func getEndianness() string {
-	var i int = 0x1
-	bs := (*[INT_SIZE]byte)(unsafe.Pointer(&i))
-	if bs[0] == 0 {
-		return "big"
-	} else {
+	buf := [2]byte{}
+	*(*uint16)(unsafe.Pointer(&buf[0])) = uint16(0xABCD)
+
+	switch (buf) {
+	case [2]byte{0xCD, 0xAB}:
 		return "little"
+	case [2]byte{0xAB, 0xCD}:
+		return "big"
+	default:
+		return "unknown"
 	}
 }
 
@@ -32,39 +37,53 @@ func Register() {
 		osType := ""
 
 		switch (rt.GOOS) {
-			case "aix":
-				osType = "AIX"
-			case "android":
-				osType = "Linux"
-			case "dragonfly":
-				osType = "DragonFly"
-			case "darwin":
-				osType = "Darwin"
-			case "illumos":
-				osType = "SunOS"
-			case "ios":
-				osType = "Darwin"
-			case "linux":
-				osType = "Linux"
-			case "netbsd":
-				osType = "NetBSD"
-			case "openbsd":
-				osType = "OpenBSD"
-			case "solaris":
-				osType = "SunOS"
-			case "windows":
-				osType = "Windows_NT"
+		case "aix":
+			osType = "AIX"
+		case "android":
+			osType = "Linux"
+		case "dragonfly":
+			osType = "DragonFly"
+		case "darwin":
+			osType = "Darwin"
+		case "illumos":
+			osType = "SunOS"
+		case "ios":
+			osType = "Darwin"
+		case "linux":
+			osType = "Linux"
+		case "netbsd":
+			osType = "NetBSD"
+		case "openbsd":
+			osType = "OpenBSD"
+		case "solaris":
+			osType = "SunOS"
+		case "windows":
+			osType = "Windows_NT"
 		}
 
 		o := module.Get("exports").(*engine.Object)
 
-		o.Set("eol", runtime.ToValue(isPosix() ? "\n" : "\r\n"))
+		var eol string
+		if isPosix() {
+			eol = "\n"
+		} else {
+			eol = "\r\n"
+		}
+
+		var null string
+		if isPosix() {
+			null = "/dev/null"
+		} else {
+			null = "\\.\nul"
+		}
+
+		o.Set("eol", runtime.ToValue(eol))
 
 		o.Set("arch", runtime.ToValue(rt.GOARCH))
 
 		o.Set("platform", runtime.ToValue(rt.GOOS))
 
-		o.Set("null", runtime.ToValue(isPosix() ? "/dev/null" : "\\.\nul"))
+		o.Set("null", runtime.ToValue(null))
 
 		o.Set("endianness", runtime.ToValue(getEndianness()))
 
