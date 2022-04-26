@@ -59,13 +59,18 @@ func split(p string, sep string) (string, []string) {
 
 	var pp string
 
+	for strings.HasPrefix(p, "file://") {
+		pp += "file://"
+		p = strings.Replace(p, "file://", "", 1)
+	}
+
 	for strings.HasPrefix(p, sep) {
-		pp = sep
+		pp += sep
 		p = strings.Replace(p, sep, "", 1)
 	}
 
 	for r.MatchString(p) {
-		pp = r.FindString(p)
+		pp += r.FindString(p)
 		p = r.ReplaceAllString(sep, "")
 	}
 
@@ -97,14 +102,34 @@ func normalize(p string, sep string) string {
 	return fp
 }
 
-func absolute(p string, sep string) bool {
+func isAbsolute(p string, sep string) bool {
+	p = normalize(p)
+
 	r, _ := regexp.Compile("^.:\\")
 	
-	if strings.HasPrefix(p, sep) || r.MatchString(p) {
+	if strings.HasPrefix(p, sep) || strings.HasPrefix(p, "file://"+sep) || r.MatchString(p) {
 		return true
 	}
 
 	return false
+}
+
+func fromFileURL(p string, sep string) string {
+	for strings.HasPrefix(p, "file://") {
+		p = strings.Replace(p, "file://", "", 1)
+	}
+
+	return normalize(p)
+}
+
+func toFileURL(p string, sep string) string {
+	p = normalize(p)
+
+	for !strings.HasPrefix(p, "file://") {
+		p = "file://" + p
+	}
+
+	return p
 }
 
 func join(l []string, sep string) string {
@@ -164,8 +189,8 @@ func Register(px bool) {
 			return runtime.ToValue(parse(p, sep))
 		})
 
-		o.Set("absolute", func(p string) engine.Value {
-			return runtime.ToValue(absolute(p, sep))
+		o.Set("isAbsolute", func(p string) engine.Value {
+			return runtime.ToValue(isAbsolute(p, sep))
 		})
 
 		o.Set("base", func(p string) engine.Value {

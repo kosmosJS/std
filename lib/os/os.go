@@ -79,7 +79,7 @@ func Register(px bool) {
 
 		o.Set("endianness", runtime.ToValue(getEndianness()))
 
-		o.Set("posix", runtime.ToValue(px))
+		o.Set("isPosix", runtime.ToValue(px))
 
 		o.Set("type", runtime.ToValue(ot))
 
@@ -107,6 +107,11 @@ func Register(px bool) {
 
 		o.Set("chdir", func(p string) error {
 			return os.Chdir(p)
+		})
+
+		o.Set("getwd", func() (engine.Value, error) {
+			d, e := os.Getwd()
+			return runtime.ToValue(d), e
 		})
 	})
 }

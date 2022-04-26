@@ -1,9 +1,9 @@
 package std
 
 import (
-	kPATH "github.com/kosmosJS/std/path"
-	kFS "github.com/kosmosJS/std/fs"
-	kOS "github.com/kosmosJS/std/os"
+	kPATH "github.com/kosmosJS/std/lib/path"
+	kFS "github.com/kosmosJS/std/lib/fs"
+	kOS "github.com/kosmosJS/std/lib/os"
 	rt "runtime"
 )
 
