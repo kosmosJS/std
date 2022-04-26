@@ -3,8 +3,7 @@ package process
 import (
 	"github.com/kosmosJS/engine-node/require"
 	"github.com/kosmosJS/engine"
-	rt "runtime"
-	"debug"
+	"strings"
 	"os"
 )
 
@@ -19,7 +18,7 @@ func env() map[string]string {
 	return v
 }
 
-func Register(px bool) {
+func Register() {
 	require.RegisterNativeModule("process", func(runtime *engine.Runtime, module *engine.Object) {
 		o := module.Get("exports").(*engine.Object)
 

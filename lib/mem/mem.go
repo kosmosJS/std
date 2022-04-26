@@ -5,44 +5,34 @@ import (
 	"github.com/kosmosJS/engine"
 	"github.com/pbnjay/memory"
 	rt "runtime"
-	"debug"
-	"os"
 )
 
-func process() map[string]map[string]string {
+func process() map[string]map[string]int {
 	var m rt.MemStats
 	rt.ReadMemStats(&m)
 
-	ms := map[string]map[string]string {
+	ms := map[string]map[string]int {
 		"gc": {
-			"cycles": m.NumGC,
-			"forcedCycles": m.NumForcedGC,
-			"nextSize": m.NextGC,
-			"lastTime": m.LastGC,
+			"cycles": int(m.NumGC),
+			"forcedCycles": int(m.NumForcedGC),
+			"nextSize": int(m.NextGC),
+			"lastTime": int(m.LastGC),
 		},
 		"heap": {
-			"alloc": m.Alloc,
-			"totalAlloc": m.TotalAlloc,
-			"objects": m.HeapObjects,
-			"obtained": m.HeapSys,
-			"released": m.HeapReleased,
-			"active": m.HeapInuse,
-			"inactive": m.HeapIdle,
+			"alloc": int(m.Alloc),
+			"totalAlloc": int(m.TotalAlloc),
+			"objects": int(m.HeapObjects),
+			"obtained": int(m.HeapSys),
+			"released": int(m.HeapReleased),
+			"active": int(m.HeapInuse),
+			"inactive": int(m.HeapIdle),
 		},
 	}
 
 	return ms
 }
 
-func Register(px bool) {
-	var gcp int
-
-	if os.Getenv("GOGC") {
-		gcp = os.Getenv("GOGC")
-	} else {
-		gcp = 100
-	}
-
+func Register() {
 	require.RegisterNativeModule("mem", func(runtime *engine.Runtime, module *engine.Object) {
 		o := module.Get("exports").(*engine.Object)
 
@@ -62,21 +52,8 @@ func Register(px bool) {
 			return runtime.ToValue(process())
 		})
 
-		o.Set("forceAggressiveGC", func() {
-			debug.FreeOSMemory()
-		})
-
 		o.Set("forceGC", func() {
 			rt.GC()
-		})
-
-		o.Set("setGCPercent", func(p int) {
-			gcp = p
-			debug.setGCPercent(p)
-		})
-
-		o.Set("getGCPercent", func(p int) engine.Value {
-			return runtime.ToValue(gcp)
 		})
 	})
 }
