@@ -39,9 +39,7 @@ func format(d map[string]string, sep string) (string, error) {
 		return "", errors.New("ext is not defined")
 	}
 
-	p := normalize(dir + sep + name + ext, sep)
-
-	return p, nil
+	return join([]string{dir, name + ext}, sep), nil
 }
 
 func parse(p string, sep string) map[string]string {
@@ -103,7 +101,7 @@ func normalize(p string, sep string) string {
 }
 
 func isAbsolute(p string, sep string) bool {
-	p = normalize(p)
+	p = normalize(p, sep)
 
 	r, _ := regexp.Compile("^.:\\")
 	
@@ -114,16 +112,16 @@ func isAbsolute(p string, sep string) bool {
 	return false
 }
 
-func fromFileURL(p string, sep string) string {
-	for strings.HasPrefix(p, "file://") {
-		p = strings.Replace(p, "file://", "", 1)
+func fromFileURL(u string, sep string) string {
+	for strings.HasPrefix(u, "file://") {
+		u = strings.Replace(u, "file://", "", 1)
 	}
 
-	return normalize(p)
+	return normalize(u, sep)
 }
 
 func toFileURL(p string, sep string) string {
-	p = normalize(p)
+	p = normalize(p, sep)
 
 	for !strings.HasPrefix(p, "file://") {
 		p = "file://" + p
@@ -212,6 +210,14 @@ func Register(px bool) {
 		o.Set("split", func(p string) engine.Value {
 			pp, sp := split(p, sep)
 			return runtime.ToValue([]interface{}{pp, sp})
+		})
+
+		o.Set("fromFileURL", func(u string) engine.Value {
+			return runtime.ToValue(fromFileURL(u, sep))
+		})
+
+		o.Set("toFileURL", func(p string) engine.Value {
+			return runtime.ToValue(toFileURL(p, sep))
 		})
 	})
 }
