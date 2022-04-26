@@ -7,6 +7,7 @@ import (
 	"strings"
 	"regexp"
 	"errors"
+	"mime"
 )
 
 func dir(p, sep string) string {
@@ -135,6 +136,8 @@ func toFileURL(p, sep string) string {
 }
 
 func common(p1, p2, sep string) string {
+	p1 = normalize(p1, sep)
+	p2 = normalize(p2, sep)
 	pp1, sp1 := split(p1, sep)
 	pp2, sp2 := split(p2, sep)
 
@@ -174,7 +177,8 @@ func ext(p, sep string) string {
 }
 
 func resolve(p1, p2, sep string) string {
-	var fp string
+	p1 = normalize(p1, sep)
+	p2 = normalize(p2, sep)
 	p, _ := split(p1, sep)
 
 	c := common(p1, p2, sep)
@@ -183,11 +187,25 @@ func resolve(p1, p2, sep string) string {
 		return p2
 	}
 
-	if strings.HasPrefix(c, p) {
-		fp = normalize(join([]string{p1, p2}, sep), sep)
+	return normalize(join([]string{p1, p2}, sep), sep)
+}
+
+func relative(p1, p2, sep string) string {
+	p1 = normalize(p1, sep)
+	p2 = normalize(p2, sep)
+	p, _ := split(p1, sep)
+
+	c := common(p1, p2, sep)
+
+	if isAbsolute(p2) || c == p {
+		return p2
 	}
 
-	return fp
+	return normalize(join([]string{"..", strings.Replace(p2, c, "", 1)}, sep), sep)
+}
+
+func getMime(p, sep string) string {
+	return mime.TypeByExtension(base(normalize(p, sep)))
 }
 
 func Register(px bool) {
@@ -257,6 +275,10 @@ func Register(px bool) {
 			return runtime.ToValue(resolve(p1, p2, sep))
 		})
 
+		o.Set("relative", func(p1, p2 string) engine.Value {
+			return runtime.ToValue(relative(p1, p2, sep))
+		})
+
 		o.Set("split", func(p string) engine.Value {
 			pp, sp := split(p, sep)
 			return runtime.ToValue([]interface{}{pp, sp})
@@ -268,6 +290,10 @@ func Register(px bool) {
 
 		o.Set("toFileURL", func(p string) engine.Value {
 			return runtime.ToValue(toFileURL(p, sep))
+		})
+
+		o.Set("getMime", func(p string) engine.Value {
+			return runtime.ToValue(getMime(p, sep))
 		})
 	})
 }
