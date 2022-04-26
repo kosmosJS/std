@@ -10,14 +10,6 @@ import (
 	"os"
 )
 
-func isPosix() bool {
-	if rt.GOOS != "windows" {
-		return true
-	}
-
-	return false
-}
-
 func getEndianness() string {
 	buf := [2]byte{}
 	*(*uint16)(unsafe.Pointer(&buf[0])) = uint16(0xABCD)
@@ -32,50 +24,50 @@ func getEndianness() string {
 	}
 }
 
-func Register() {
+func Register(px bool) {
 	require.RegisterNativeModule("os", func(runtime *engine.Runtime, module *engine.Object) {
-		osType := ""
+		ot := ""
 
 		switch (rt.GOOS) {
 		case "aix":
-			osType = "AIX"
+			ot = "AIX"
 		case "android":
-			osType = "Linux"
+			ot = "Linux"
 		case "dragonfly":
-			osType = "DragonFly"
+			ot = "DragonFly"
 		case "darwin":
-			osType = "Darwin"
+			ot = "Darwin"
 		case "illumos":
-			osType = "SunOS"
+			ot = "SunOS"
 		case "ios":
-			osType = "Darwin"
+			ot = "Darwin"
 		case "linux":
-			osType = "Linux"
+			ot = "Linux"
 		case "netbsd":
-			osType = "NetBSD"
+			ot = "NetBSD"
 		case "openbsd":
-			osType = "OpenBSD"
+			ot = "OpenBSD"
 		case "solaris":
-			osType = "SunOS"
+			ot = "SunOS"
 		case "windows":
-			osType = "Windows_NT"
+			ot = "Windows_NT"
 		}
 
-		o := module.Get("exports").(*engine.Object)
-
 		var eol string
-		if isPosix() {
+		if px {
 			eol = "\n"
 		} else {
 			eol = "\r\n"
 		}
 
-		var null string
-		if isPosix() {
-			null = "/dev/null"
+		var n string
+		if px {
+			n = "/dev/n"
 		} else {
-			null = "\\.\nul"
+			n = "\\.\nul"
 		}
+
+		o := module.Get("exports").(*engine.Object)
 
 		o.Set("eol", runtime.ToValue(eol))
 
@@ -83,13 +75,13 @@ func Register() {
 
 		o.Set("platform", runtime.ToValue(rt.GOOS))
 
-		o.Set("null", runtime.ToValue(null))
+		o.Set("null", runtime.ToValue(n))
 
 		o.Set("endianness", runtime.ToValue(getEndianness()))
 
-		o.Set("posix", runtime.ToValue(isPosix()))
+		o.Set("posix", runtime.ToValue(px))
 
-		o.Set("type", runtime.ToValue(osType))
+		o.Set("type", runtime.ToValue(ot))
 
 		o.Set("memtotal", func() engine.Value {
 			return runtime.ToValue(memory.TotalMemory())
@@ -111,6 +103,10 @@ func Register() {
 		o.Set("homedir", func() (engine.Value, error) {
 			d, e := homedir.Dir()
 			return runtime.ToValue(d), e
+		})
+
+		o.Set("chdir", func(p string) error {
+			return os.Chdir(p)
 		})
 	})
 }
