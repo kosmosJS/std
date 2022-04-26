@@ -9,7 +9,7 @@ import (
 	"errors"
 )
 
-func dir(p string, sep string) string {
+func dir(p, sep string) string {
 	pp, sp := split(normalize(p, sep), sep)
 
 	return pp + strings.Join(sp[:len(sp)-1], sep)
@@ -42,7 +42,7 @@ func format(d map[string]string, sep string) (string, error) {
 	return join([]string{dir, name + ext}, sep), nil
 }
 
-func parse(p string, sep string) map[string]string {
+func parse(p, sep string) map[string]string {
 	data := map[string]string {
 		"dir": dir(p, sep),
 		"name": name(p, sep),
@@ -52,7 +52,7 @@ func parse(p string, sep string) map[string]string {
 	return data
 }
 
-func split(p string, sep string) (string, []string) {
+func split(p, sep string) (string, []string) {
 	r, _ := regexp.Compile("^.:\\")
 
 	var pp string
@@ -81,14 +81,18 @@ func split(p string, sep string) (string, []string) {
 	return pp, sp
 }
 
-func normalize(p string, sep string) string {
+func normalize(p, sep string) string {
 	pp, sp := split(p, sep)
 
 	var ns []string
 
 	for _, i := range sp {
-		if i != "" && i != ".." {
+		if i != "" && i != ".." && i != "." {
 			ns = append(ns, i)
+			continue
+		}
+
+		if i == "." {
 			continue
 		}
 
@@ -100,11 +104,11 @@ func normalize(p string, sep string) string {
 	return fp
 }
 
-func isAbsolute(p string, sep string) bool {
+func isAbsolute(p, sep string) bool {
 	p = normalize(p, sep)
 
 	r, _ := regexp.Compile("^.:\\")
-	
+
 	if strings.HasPrefix(p, sep) || strings.HasPrefix(p, "file://"+sep) || r.MatchString(p) {
 		return true
 	}
@@ -112,7 +116,7 @@ func isAbsolute(p string, sep string) bool {
 	return false
 }
 
-func fromFileURL(u string, sep string) string {
+func fromFileURL(u, sep string) string {
 	for strings.HasPrefix(u, "file://") {
 		u = strings.Replace(u, "file://", "", 1)
 	}
@@ -120,7 +124,7 @@ func fromFileURL(u string, sep string) string {
 	return normalize(u, sep)
 }
 
-func toFileURL(p string, sep string) string {
+func toFileURL(p, sep string) string {
 	p = normalize(p, sep)
 
 	for !strings.HasPrefix(p, "file://") {
@@ -130,22 +134,60 @@ func toFileURL(p string, sep string) string {
 	return p
 }
 
+func common(p1, p2, sep string) string {
+	pp1, sp1 := split(p1, sep)
+	pp2, sp2 := split(p2, sep)
+
+	if pp1 != pp2 {
+		return ""
+	}
+
+	var fp []string
+
+	for i, p := range sp1 {
+		if sp2[i] == p {
+			fp = append(fp, p)
+		} else {
+			break
+		}
+	}
+
+	return join(fp, sep)
+}
+
 func join(l []string, sep string) string {
 	return normalize(strings.Join(l, sep), sep)
 }
 
-func base(p string, sep string) string {
+func base(p, sep string) string {
 	return strings.Replace(p, dir(p, sep), "", 1)
 }
 
-func name(p string, sep string) string {
+func name(p, sep string) string {
 	return strings.Replace(strings.Replace(p, dir(p, sep), "", 1), ext(p, sep), "", 1)
 }
 
-func ext(p string, sep string) string {
+func ext(p, sep string) string {
 	sp := strings.Split(strings.Replace(p, dir(p, sep), "", 1), ".")
 
 	return strings.Join(sp[1:len(sp)-1], ".")
+}
+
+func resolve(p1, p2, sep string) string {
+	var fp string
+	p, _ := split(p1, sep)
+
+	c := common(p1, p2, sep)
+
+	if c == "" || c == p {
+		return p2
+	}
+
+	if strings.HasPrefix(c, p) {
+		fp = normalize(join([]string{p1, p2}, sep), sep)
+	}
+
+	return fp
 }
 
 func Register(px bool) {
@@ -205,6 +247,14 @@ func Register(px bool) {
 
 		o.Set("normalize", func(p string) engine.Value {
 			return runtime.ToValue(normalize(p, sep))
+		})
+
+		o.Set("common", func(p1, p2 string) engine.Value {
+			return runtime.ToValue(common(p1, p2, sep))
+		})
+
+		o.Set("resolve", func(p1, p2 string) engine.Value {
+			return runtime.ToValue(resolve(p1, p2, sep))
 		})
 
 		o.Set("split", func(p string) engine.Value {

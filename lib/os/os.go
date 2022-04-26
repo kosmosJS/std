@@ -4,7 +4,6 @@ import (
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/kosmosJS/engine-node/require"
 	"github.com/kosmosJS/engine"
-	"github.com/pbnjay/memory"
 	rt "runtime"
 	"unsafe"
 	"os"
@@ -83,34 +82,15 @@ func Register(px bool) {
 
 		o.Set("type", runtime.ToValue(ot))
 
-		o.Set("memtotal", func() engine.Value {
-			return runtime.ToValue(memory.TotalMemory())
-		})
-
-		o.Set("memfree", func() engine.Value {
-			return runtime.ToValue(memory.FreeMemory())
-		})
-
-		o.Set("memused", func() engine.Value {
-			return runtime.ToValue(memory.TotalMemory() - memory.FreeMemory())
-		})
+		o.Set("threads", runtime.ToValue(rt.NumCPU()))
 
 		o.Set("hostname", func() (engine.Value, error) {
 			n, e := os.Hostname()
 			return runtime.ToValue(n), e
 		})
-		
+
 		o.Set("homedir", func() (engine.Value, error) {
 			d, e := homedir.Dir()
-			return runtime.ToValue(d), e
-		})
-
-		o.Set("chdir", func(p string) error {
-			return os.Chdir(p)
-		})
-
-		o.Set("getwd", func() (engine.Value, error) {
-			d, e := os.Getwd()
 			return runtime.ToValue(d), e
 		})
 	})
