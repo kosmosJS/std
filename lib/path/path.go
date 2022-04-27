@@ -197,15 +197,11 @@ func relative(p1, p2, sep string) string {
 
 	c := common(p1, p2, sep)
 
-	if isAbsolute(p2) || c == p {
+	if isAbsolute(p2, sep) || c == p {
 		return p2
 	}
 
 	return normalize(join([]string{"..", strings.Replace(p2, c, "", 1)}, sep), sep)
-}
-
-func getMime(p, sep string) string {
-	return mime.TypeByExtension(base(normalize(p, sep)))
 }
 
 func Register(px bool) {
@@ -293,7 +289,7 @@ func Register(px bool) {
 		})
 
 		o.Set("getMime", func(p string) engine.Value {
-			return runtime.ToValue(getMime(p, sep))
+			return runtime.ToValue(mime.TypeByExtension(base(normalize(p, sep), sep)))
 		})
 	})
 }

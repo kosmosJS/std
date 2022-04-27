@@ -6,6 +6,7 @@ import (
 	cp "github.com/otiai10/copy"
 	"errors"
 	"bufio"
+	"io/fs"
 	"fmt"
 	"os"
 )
@@ -91,10 +92,75 @@ func exists(p string) bool {
 
 func isDir(p string) bool {
 	i, e := os.Stat(p)
+
 	if e != nil {
 		return false
 	}
+
 	return i.IsDir()
+}
+
+func isFile(p string) bool {
+	if exists(p) && !isDir(p) {
+		i, e := os.Stat(p)
+
+		if e != nil || i.Mode()&fs.ModeSymlink == 0 {
+			return false
+		}
+	}
+
+	return false
+}
+
+func isSymlink(p string) bool {
+	if exists(p) && !isDir(p) {
+		i, e := os.Stat(p)
+
+
+		if e != nil {
+			return false
+		} else if i.Mode()&fs.ModeSymlink != 0 {
+			return true
+		}
+	}
+
+	return false
+}
+
+func ensureFile(p string, m os.FileMode) error {
+	if !exists(p) {
+		return writeFile(p, []string{}, m)
+	}
+
+	return nil
+}
+
+func ensureDir(p string, m os.FileMode) error {
+	if !exists(p) {
+		return os.MkdirAll(p, m)
+	} else if !isDir(p) {
+		return errors.New("'" + p + "' already exists, but isn't a directory.")
+	}
+
+	return nil
+}
+
+func ensureSymlink(s, d string) error {
+	if !exists(d) {
+		return os.Symlink(s, d)
+	}
+
+	i, e := os.Lstat(d)
+
+	if e != nil {
+		return e
+	}
+
+	if i.Mode()&fs.ModeSymlink == 0 {
+		return errors.New("'" + d + "' already exists, but isn't a symlink.")
+	}
+
+	return nil
 }
 
 func Register() {
@@ -114,12 +180,12 @@ func Register() {
 			return runtime.ToValue(d), e
 		})
 
-		o.Set("rename", func(src string, dst string) error {
-			return os.Rename(src, dst)
+		o.Set("rename", func(s, d string) error {
+			return os.Rename(s, d)
 		})
 
-		o.Set("copy", func(src string, dst string) error {
-			return cp.Copy(src, dst)
+		o.Set("copy", func(s, d string) error {
+			return cp.Copy(s, d)
 		})
 
 		o.Set("remove", func(p string) error {
@@ -130,8 +196,20 @@ func Register() {
 			return os.Remove(p)
 		})
 
+		o.Set("isFile", func(p string) engine.Value {
+			return runtime.ToValue(isDir(p))
+		})
+
 		o.Set("isDir", func(p string) engine.Value {
 			return runtime.ToValue(isDir(p))
+		})
+
+		o.Set("isFile", func(p string) engine.Value {
+			return runtime.ToValue(isFile(p))
+		})
+
+		o.Set("isSymlink", func(p string) engine.Value {
+			return runtime.ToValue(isSymlink(p))
 		})
 
 		o.Set("mkdir", func(p string, m os.FileMode) error {
@@ -148,6 +226,22 @@ func Register() {
 
 		o.Set("exists", func(p string) engine.Value {
 			return runtime.ToValue(exists(p))
+		})
+
+		o.Set("createSymlink", func(s, d string) error {
+			return os.Symlink(s, d)
+		})
+
+		o.Set("ensureFile", func(p string, m os.FileMode) error {
+			return ensureFile(p, m)
+		})
+
+		o.Set("ensureDir", func(p string, m os.FileMode) error {
+			return ensureDir(p, m)
+		})
+
+		o.Set("ensureSymlink", func(s, d string) error {
+			return ensureSymlink(s, d)
 		})
 	})
 }
